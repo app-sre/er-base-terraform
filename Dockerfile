@@ -1,7 +1,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1733767867 AS prod
 
-LABEL konflux.additional-tags="tf-1.6.6-py-3.11-v0.1.0"
+LABEL konflux.additional-tags="tf-1.6.6-v0.1.0"
 
 USER 0
 

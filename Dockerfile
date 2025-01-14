@@ -1,5 +1,5 @@
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1733767867 AS prod
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1736404155@sha256:b87097994ed62fbf1de70bc75debe8dacf3ea6e00dd577d74503ef66452c59d6 AS prod
 
 LABEL konflux.additional-tags="tf-1.6.6-v0.1.0"
 

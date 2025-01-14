@@ -11,3 +11,4 @@ Using common images on modules using the same provider saves a ton of bandwith b
   must be implemented in the final module. It should generate the backend configuration and the variables file to be used by the module.
 * [er-aws-kms](https://github.com/app-sre/er-aws-kms) is a good example to get started.
 * [external-resources-io](https://github.com/app-sre/external-resources-io) has helper methods to generate the configuration files (>=0.4.0).
+

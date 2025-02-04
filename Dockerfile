@@ -1,7 +1,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1738643652@sha256:3902bab19972cd054fd08b2a4e08612ae7e68861ee5d9a5cf22d828f27e2f479 AS prod
 
-LABEL konflux.additional-tags="tf-1.6.6-v0.1.0"
+LABEL konflux.additional-tags="tf-1.6.6-v0.2.0"
 
 USER 0
 
@@ -11,7 +11,7 @@ ENV HOME="/home/app" \
 
 # Terraform versions and other related variables
 ENV TF_VERSION="1.6.6" \
-    TF_PLUGIN_CACHE_DIR=/.terraform.d/plugin-cache/ \
+    TF_PLUGIN_CACHE_DIR=${HOME}/.terraform.d/plugin-cache/ \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
 
 COPY LICENSE /licenses/LICENSE
@@ -39,7 +39,7 @@ RUN mkdir -p ${TF_PLUGIN_CACHE_DIR} && chown 1001:0 ${TF_PLUGIN_CACHE_DIR}
 RUN rm -rf /tmp && mkdir /tmp && chmod 1777 /tmp
 
 # User setup
-RUN mkdir /home/app && useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
+RUN useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
     chown -R 1001:0 ${HOME}
 USER app
 

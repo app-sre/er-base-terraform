@@ -9,7 +9,7 @@ USER 0
 ENV HOME="/home/app" \
     APP="/home/app/src"
 
-# CDKTF and Terraform versions and other related variables
+# Terraform versions and other related variables
 ENV TF_VERSION="1.6.6" \
     TF_PLUGIN_CACHE_DIR=/.terraform.d/plugin-cache/ \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
@@ -20,7 +20,7 @@ COPY LICENSE /licenses/LICENSE
 RUN microdnf install -y python3.11 && \
     update-alternatives --install /usr/bin/python3 python /usr/bin/python3.11 1
 
-# Install nodejs and other dependencies
+# Install dependencies
 RUN INSTALL_PKGS="make tar which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \

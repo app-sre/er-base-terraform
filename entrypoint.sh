@@ -9,8 +9,8 @@ if [[ -z "$AWS_SHARED_CREDENTIALS_FILE" ]]; then
     exit 1
 fi
 
-DRY_RUN=${DRY_RUN:-"True"}
-ACTION=${ACTION:-"Apply"}
+export DRY_RUN=${DRY_RUN:-"True"}
+export ACTION=${ACTION:-"Apply"}
 
 if [[ $DRY_RUN != "True" ]] && [[ $DRY_RUN != "False" ]]; then
     echo "Invalid DRY_RUN option: $DRY_RUN. Must be 'True' or 'False'"
@@ -24,38 +24,111 @@ fi
 
 echo "Starting: ACTION=$ACTION with DRY_RUN=$DRY_RUN"
 
+# WORK directory
+export WORK=${WORK:-"$(mktemp -d)"}
+echo "Using WORK directory: $WORK"
+
 # Terraform output options
 export TF_CLI_ARGS=${TF_CLI_ARGS:-"-no-color"}
-TERRAFORM_OUT_DIR="./module"
-TERRAFORM_CMD="terraform -chdir=$TERRAFORM_OUT_DIR"
-TERRAFORM_VARS="-var-file=tfvars.json"
-OUTPUTS_FILE="${TERRAFORM_OUT_DIR}/outputs.json"
 
+# The base terraform configuration to run
+export TERRAFORM_MODULE_DIR=${TERRAFORM_MODULE_DIR:-"./module"}
+
+# Terraform will take the module path as a working directory
+export TERRAFORM_CMD="terraform -chdir=$TERRAFORM_MODULE_DIR"
+
+# the vars file path within the module directory
+export TERRAFORM_VARS="-var-file=tfvars.json"
+
+export PLAN_FILE="${WORK}/plan"
+export PLAN_FILE_JSON="${WORK}/plan.json"
+export OUTPUTS_FILE="${WORK}/output.json"
+
+LOCK="-lock=true"
+if [[ $DRY_RUN == "True" ]]; then
+    LOCK="-lock=false"
+fi
+
+
+function validate_generate_tf_config() {
+    local F_PATH=$(command -v generate-tf-config)
+    if [[ -z "$F_PATH" || ! -x "$F_PATH" ]]; then
+        echo "generate-tf-config must be an executable file and be findable in the system path"
+        exit 1
+    fi
+}
+
+function run_hook() {
+    local HOOK_NAME="$1"
+    shift
+    local HOOK_DIR="./hooks"
+    local HOOK_SCRIPT=""
+
+    # Possible extensions for the hook scripts
+    local EXTENSIONS=("sh" "py")
+
+    if [ ! -d "$HOOK_DIR" ]; then
+        # no hook directory
+        return 0
+    fi
+
+    # Search for a valid hook script
+    for EXT in "${EXTENSIONS[@]}"; do
+        if [ -x "${HOOK_DIR}/${HOOK_NAME}.${EXT}" ]; then
+            HOOK_SCRIPT="${HOOK_DIR}/${HOOK_NAME}.${EXT}"
+            break
+        fi
+    done
+
+    if [ -z "$HOOK_SCRIPT" ]; then
+        # no hook script
+        return 0
+    fi
+
+    # Export variables for hooks
+    export DRY_RUN
+
+    echo "Running hook: $HOOK_NAME"
+    "$HOOK_SCRIPT" "$@"
+}
+
+function init() {
+    run_hook "pre_init"
+    $TERRAFORM_CMD init
+    run_hook "post_init"
+}
+
+
+function plan() {
+    run_hook "pre_plan"
+    PLAN_EXTRA_OPTIONS=""
+    if [[ $ACTION == "Destroy" ]]; then
+        PLAN_EXTRA_OPTIONS="-destroy"
+    fi
+    $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out=${PLAN_FILE} ${TERRAFORM_VARS} ${LOCK}
+    $TERRAFORM_CMD show -json ${PLAN_FILE} > ${PLAN_FILE_JSON}
+    run_hook "post_plan"
+}
+
+function apply() {
+    run_hook "pre_apply"
+    if [[ $ACTION == "Apply" ]] && [[ $DRY_RUN == "False" ]]; then
+        $TERRAFORM_CMD apply -auto-approve ${PLAN_FILE}
+        $TERRAFORM_CMD output -json > $OUTPUTS_FILE
+    elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
+        $TERRAFORM_CMD destroy -auto-approve ${PLAN_FILE}
+    fi
+    run_hook "post_apply"
+}
+
+validate_generate_tf_config
+run_hook "pre_run"
 # Generate module configuration
 # generate-tf-config is a script in the final module.
+# It generates the terraform backend file and the vars file
+# into the module directory
 generate-tf-config
-
-$TERRAFORM_CMD init
-
-if [[ $ACTION == "Apply" ]]; then
-    if [[ $DRY_RUN == "True" ]]; then
-        $TERRAFORM_CMD plan -out=plan $TERRAFORM_VARS
-        if [ -f "validate_plan.py" ]; then
-            $TERRAFORM_CMD show -json $TERRAFORM_OUT_DIR/plan > $TERRAFORM_OUT_DIR/plan.json
-            python3 validate_plan.py "$TERRAFORM_OUT_DIR"/plan.json
-        fi
-    elif [[ $DRY_RUN == "False" ]]; then
-        $TERRAFORM_CMD apply -auto-approve $TERRAFORM_VARS
-        $TERRAFORM_CMD output -json > $OUTPUTS_FILE
-        if [ -f "post_checks.py" ]; then
-            python3 post_checks.py $OUTPUTS_FILE
-        fi
-    fi
-elif [[ $ACTION == "Destroy" ]]; then
-    if [[ $DRY_RUN == "True" ]]; then
-        $TERRAFORM_CMD plan -destroy $TERRAFORM_VARS
-    elif [[ $DRY_RUN == "False" ]]; then
-        # Maybe the keys should be disabled instead of removed?
-        $TERRAFORM_CMD destroy -auto-approve $TERRAFORM_VARS
-    fi
-fi
+init
+plan
+apply
+run_hook "post_run"

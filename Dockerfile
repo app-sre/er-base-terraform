@@ -1,7 +1,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1738816775@sha256:66b99214cb9733e77c4a12cc3e3cbbe76769a213f4e2767f170a4f0fdf9db490 AS prod
 
-LABEL konflux.additional-tags="tf-1.6.6-v0.1.0"
+LABEL konflux.additional-tags="tf-1.6.6-v0.2.0"
 
 USER 0
 
@@ -9,9 +9,9 @@ USER 0
 ENV HOME="/home/app" \
     APP="/home/app/src"
 
-# CDKTF and Terraform versions and other related variables
+# Terraform versions and other related variables
 ENV TF_VERSION="1.6.6" \
-    TF_PLUGIN_CACHE_DIR=/.terraform.d/plugin-cache/ \
+    TF_PLUGIN_CACHE_DIR=${HOME}/.terraform.d/plugin-cache/ \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
 
 COPY LICENSE /licenses/LICENSE
@@ -20,7 +20,7 @@ COPY LICENSE /licenses/LICENSE
 RUN microdnf install -y python3.11 && \
     update-alternatives --install /usr/bin/python3 python /usr/bin/python3.11 1
 
-# Install nodejs and other dependencies
+# Install dependencies
 RUN INSTALL_PKGS="make tar which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \
@@ -39,7 +39,7 @@ RUN mkdir -p ${TF_PLUGIN_CACHE_DIR} && chown 1001:0 ${TF_PLUGIN_CACHE_DIR}
 RUN rm -rf /tmp && mkdir /tmp && chmod 1777 /tmp
 
 # User setup
-RUN mkdir /home/app && useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
+RUN useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
     chown -R 1001:0 ${HOME}
 USER app
 

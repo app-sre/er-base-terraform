@@ -24,24 +24,36 @@ fi
 
 echo "Starting: ACTION=$ACTION with DRY_RUN=$DRY_RUN"
 
-# WORK directory
-export WORK=${WORK:-"$(mktemp -d)"}
+# WORK directory. Work is mounted as a volume to share "work" across all containers.
+export WORK=${WORK:-"/work"}
+mkdir -p $WORK
 echo "Using WORK directory: $WORK"
 
 # Terraform output options
 export TF_CLI_ARGS=${TF_CLI_ARGS:-"-no-color"}
 
-# The base terraform configuration to run
-export TERRAFORM_MODULE_DIR=${TERRAFORM_MODULE_DIR:-"./module"}
+# The terraform configuration to run.
+export TERRAFORM_MODULE_SRC_DIR=${TERRAFORM_MODULE_SRC_DIR:-"./module"}
+
+# Working directory where the SRC module will be copied.
+export TMP_DIR=$(mktemp -d)
+export TERRAFORM_MODULE_WORK_DIR=${TERRAFORM_MODULE_WORK_DIR:-"${TMP_DIR}/module"}
+echo "Using TERRAFORM_MODULE_WORK_DIR directory: ${TERRAFORM_MODULE_WORK_DIR}"
+
+# Variables used by external-resources io to generate the required configuration
+export TF_VARS_FILE=${TF_VARS_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/tfvars.json"}
+export BACKEND_TF_FILE=${BACKEND_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/backend.tf"}
 
 # Terraform will take the module path as a working directory
-export TERRAFORM_CMD="terraform -chdir=$TERRAFORM_MODULE_DIR"
+export TERRAFORM_CMD="terraform -chdir=$TERRAFORM_MODULE_WORK_DIR"
 
 # the vars file path within the module directory
 export TERRAFORM_VARS="-var-file=tfvars.json"
 
-export PLAN_FILE="${WORK}/plan"
-export PLAN_FILE_JSON="${WORK}/plan.json"
+export PLAN_FILE="${TMP_DIR}/plan"
+export PLAN_FILE_JSON="${TMP_DIR}/plan.json"
+
+# Outputs file is read by the outputs handling container under the /work path.
 export OUTPUTS_FILE="${WORK}/output.json"
 
 LOCK="-lock=true"
@@ -56,6 +68,11 @@ function validate_generate_tf_config() {
         echo "generate-tf-config must be an executable file and be findable in the system path"
         exit 1
     fi
+}
+
+function create_working_directory() {
+    mkdir -p ${TERRAFORM_MODULE_WORK_DIR}
+    cp -rf ${TERRAFORM_MODULE_SRC_DIR}/* ${TERRAFORM_MODULE_WORK_DIR}/
 }
 
 function run_hook() {
@@ -116,12 +133,13 @@ function apply() {
         $TERRAFORM_CMD apply -auto-approve ${PLAN_FILE}
         $TERRAFORM_CMD output -json > $OUTPUTS_FILE
     elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
-        $TERRAFORM_CMD destroy -auto-approve ${PLAN_FILE}
+        $TERRAFORM_CMD destroy -auto-approve ${TERRAFORM_VARS}
     fi
     run_hook "post_apply"
 }
 
 validate_generate_tf_config
+create_working_directory
 run_hook "pre_run"
 # Generate module configuration
 # generate-tf-config is a script in the final module.

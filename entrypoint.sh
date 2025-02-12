@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
 set -e
 
 # Use /credentials as AWS credentials file if it exists
@@ -26,7 +27,7 @@ echo "Starting: ACTION=$ACTION with DRY_RUN=$DRY_RUN"
 
 # WORK directory. Work is mounted as a volume to share "work" across all containers.
 export WORK=${WORK:-"/work"}
-mkdir -p $WORK
+mkdir -p "$WORK"
 echo "Using WORK directory: $WORK"
 
 # Terraform output options
@@ -63,7 +64,7 @@ fi
 
 
 function validate_generate_tf_config() {
-    local F_PATH=$(command -v generate-tf-config)
+    F_PATH=$(command -v generate-tf-config)
     if [[ -z "$F_PATH" || ! -x "$F_PATH" ]]; then
         echo "generate-tf-config must be an executable file and be findable in the system path"
         exit 1
@@ -71,8 +72,8 @@ function validate_generate_tf_config() {
 }
 
 function create_working_directory() {
-    mkdir -p ${TERRAFORM_MODULE_WORK_DIR}
-    cp -rf ${TERRAFORM_MODULE_SRC_DIR}/* ${TERRAFORM_MODULE_WORK_DIR}/
+    mkdir -p "${TERRAFORM_MODULE_WORK_DIR}"
+    cp -rf "${TERRAFORM_MODULE_SRC_DIR}"/* "${TERRAFORM_MODULE_WORK_DIR}"/
 }
 
 function run_hook() {
@@ -122,16 +123,16 @@ function plan() {
     if [[ $ACTION == "Destroy" ]]; then
         PLAN_EXTRA_OPTIONS="-destroy"
     fi
-    $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out=${PLAN_FILE} ${TERRAFORM_VARS} ${LOCK}
-    $TERRAFORM_CMD show -json ${PLAN_FILE} > ${PLAN_FILE_JSON}
+    $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out="${PLAN_FILE}" ${TERRAFORM_VARS} ${LOCK}
+    $TERRAFORM_CMD show -json "${PLAN_FILE}" > "${PLAN_FILE_JSON}"
     run_hook "post_plan"
 }
 
 function apply() {
     run_hook "pre_apply"
     if [[ $ACTION == "Apply" ]] && [[ $DRY_RUN == "False" ]]; then
-        $TERRAFORM_CMD apply -auto-approve ${PLAN_FILE}
-        $TERRAFORM_CMD output -json > $OUTPUTS_FILE
+        $TERRAFORM_CMD apply -auto-approve "${PLAN_FILE}"
+        $TERRAFORM_CMD output -json > "$OUTPUTS_FILE"
     elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
         $TERRAFORM_CMD destroy -auto-approve ${TERRAFORM_VARS}
     fi

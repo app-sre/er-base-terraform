@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+if [ -z "${TERRAFORM_MODULE_SRC_DIR}" ]; then
+    echo "TERRAFORM_MODULE_SRC_DIR is not set. Exiting."
+    exit 1
+fi
+
+TF_INIT=$(mktemp -d)
+
+cp "${TERRAFORM_MODULE_SRC_DIR}"/versions.tf "${TF_INIT}"
+terraform -chdir="${TF_INIT}" init
+rm -rf "${TF_INIT}"

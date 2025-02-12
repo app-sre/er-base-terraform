@@ -40,6 +40,8 @@ RUN mkdir -p ${TF_PLUGIN_CACHE_DIR} && chown 1001:0 ${TF_PLUGIN_CACHE_DIR}
 # Clean up /tmp
 RUN rm -rf /tmp && mkdir /tmp && chmod 1777 /tmp
 
+COPY terraform-provider-sync /usr/local/bin/terraform-provider-sync
+
 # User setup
 RUN useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
     chown -R 1001:0 ${HOME}

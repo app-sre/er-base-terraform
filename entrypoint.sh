@@ -66,8 +66,9 @@ fi
 
 
 function validate_generate_tf_config() {
-    F_PATH=$(command -v generate-tf-config)
-    if [[ -z "$F_PATH" || ! -x "$F_PATH" ]]; then
+    local f_path
+    f_path=$(command -v generate-tf-config)
+    if [[ -z "$f_path" || ! -x "$f_path" ]]; then
         echo "generate-tf-config must be an executable file and be findable in the system path"
         exit 1
     fi

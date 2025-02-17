@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2155
 set -e
 
 # Use /credentials as AWS credentials file if it exists
@@ -37,7 +36,8 @@ export TF_CLI_ARGS=${TF_CLI_ARGS:-"-no-color"}
 export TERRAFORM_MODULE_SRC_DIR=${TERRAFORM_MODULE_SRC_DIR:-"./module"}
 
 # Working directory where the SRC module will be copied.
-export TMP_DIR=$(mktemp -d)
+TMP_DIR=$(mktemp -d)
+export TMP_DIR
 export TERRAFORM_MODULE_WORK_DIR=${TERRAFORM_MODULE_WORK_DIR:-"${TMP_DIR}/module"}
 echo "Using TERRAFORM_MODULE_WORK_DIR directory: ${TERRAFORM_MODULE_WORK_DIR}"
 

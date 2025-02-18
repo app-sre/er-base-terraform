@@ -26,7 +26,7 @@ echo "Starting: ACTION=$ACTION with DRY_RUN=$DRY_RUN"
 
 # WORK directory. Work is mounted as a volume to share "work" across all containers.
 export WORK=${WORK:-"/work"}
-mkdir -p $WORK
+mkdir -p "$WORK"
 echo "Using WORK directory: $WORK"
 
 # Terraform output options
@@ -36,13 +36,15 @@ export TF_CLI_ARGS=${TF_CLI_ARGS:-"-no-color"}
 export TERRAFORM_MODULE_SRC_DIR=${TERRAFORM_MODULE_SRC_DIR:-"./module"}
 
 # Working directory where the SRC module will be copied.
-export TMP_DIR=$(mktemp -d)
+TMP_DIR=$(mktemp -d)
+export TMP_DIR
 export TERRAFORM_MODULE_WORK_DIR=${TERRAFORM_MODULE_WORK_DIR:-"${TMP_DIR}/module"}
 echo "Using TERRAFORM_MODULE_WORK_DIR directory: ${TERRAFORM_MODULE_WORK_DIR}"
 
 # Variables used by external-resources io to generate the required configuration
 export TF_VARS_FILE=${TF_VARS_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/tfvars.json"}
 export BACKEND_TF_FILE=${BACKEND_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/backend.tf"}
+export VARIABLES_TF_FILE=${VARIABLES_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/variables.tf"}
 
 # Terraform will take the module path as a working directory
 export TERRAFORM_CMD="terraform -chdir=$TERRAFORM_MODULE_WORK_DIR"
@@ -63,16 +65,17 @@ fi
 
 
 function validate_generate_tf_config() {
-    local F_PATH=$(command -v generate-tf-config)
-    if [[ -z "$F_PATH" || ! -x "$F_PATH" ]]; then
+    local f_path
+    f_path=$(command -v generate-tf-config)
+    if [[ -z "$f_path" || ! -x "$f_path" ]]; then
         echo "generate-tf-config must be an executable file and be findable in the system path"
         exit 1
     fi
 }
 
 function create_working_directory() {
-    mkdir -p ${TERRAFORM_MODULE_WORK_DIR}
-    cp -rf ${TERRAFORM_MODULE_SRC_DIR}/* ${TERRAFORM_MODULE_WORK_DIR}/
+    mkdir -p "${TERRAFORM_MODULE_WORK_DIR}"
+    cp -rf "${TERRAFORM_MODULE_SRC_DIR}"/* "${TERRAFORM_MODULE_WORK_DIR}"/
 }
 
 function run_hook() {
@@ -102,9 +105,6 @@ function run_hook() {
         return 0
     fi
 
-    # Export variables for hooks
-    export DRY_RUN
-
     echo "Running hook: $HOOK_NAME"
     "$HOOK_SCRIPT" "$@"
 }
@@ -122,16 +122,17 @@ function plan() {
     if [[ $ACTION == "Destroy" ]]; then
         PLAN_EXTRA_OPTIONS="-destroy"
     fi
-    $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out=${PLAN_FILE} ${TERRAFORM_VARS} ${LOCK}
-    $TERRAFORM_CMD show -json ${PLAN_FILE} > ${PLAN_FILE_JSON}
+    $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out="${PLAN_FILE}" ${TERRAFORM_VARS} ${LOCK}
+    $TERRAFORM_CMD show -json "${PLAN_FILE}" > "${PLAN_FILE_JSON}"
     run_hook "post_plan"
 }
 
 function apply() {
     run_hook "pre_apply"
     if [[ $ACTION == "Apply" ]] && [[ $DRY_RUN == "False" ]]; then
-        $TERRAFORM_CMD apply -auto-approve ${PLAN_FILE}
-        $TERRAFORM_CMD output -json > $OUTPUTS_FILE
+        $TERRAFORM_CMD apply "${PLAN_FILE}"
+        $TERRAFORM_CMD output -json > "$OUTPUTS_FILE"
+        run_hook "post_output"
     elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
         $TERRAFORM_CMD destroy -auto-approve ${TERRAFORM_VARS}
     fi

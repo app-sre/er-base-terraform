@@ -134,7 +134,7 @@ function apply() {
         $TERRAFORM_CMD output -json > "$OUTPUTS_FILE"
         run_hook "post_output"
     elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
-        $TERRAFORM_CMD destroy "${PLAN_FILE}"
+        $TERRAFORM_CMD destroy -auto-approve ${TERRAFORM_VARS}
     fi
     run_hook "post_apply"
 }

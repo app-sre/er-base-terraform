@@ -42,7 +42,7 @@ export TERRAFORM_MODULE_WORK_DIR=${TERRAFORM_MODULE_WORK_DIR:-"${TMP_DIR}/module
 echo "Using TERRAFORM_MODULE_WORK_DIR directory: ${TERRAFORM_MODULE_WORK_DIR}"
 
 # Variables used by external-resources io to generate the required configuration
-export TF_VARS_FILE=${TF_VARS_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/tfvars.json"}
+export TF_VARS_FILE=${TF_VARS_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/terraform.tfvars.json"}
 export BACKEND_TF_FILE=${BACKEND_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/backend.tf"}
 export VARIABLES_TF_FILE=${VARIABLES_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/variables.tf"}
 
@@ -50,7 +50,7 @@ export VARIABLES_TF_FILE=${VARIABLES_TF_FILE:-"${TERRAFORM_MODULE_WORK_DIR}/vari
 export TERRAFORM_CMD="terraform -chdir=$TERRAFORM_MODULE_WORK_DIR"
 
 # the vars file path within the module directory
-export TERRAFORM_VARS="-var-file=tfvars.json"
+export TERRAFORM_VARS="-var-file=${TF_VARS_FILE}"
 
 export PLAN_FILE="${TMP_DIR}/plan"
 export PLAN_FILE_JSON="${TMP_DIR}/plan.json"

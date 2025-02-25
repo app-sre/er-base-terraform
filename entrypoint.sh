@@ -152,6 +152,26 @@ function apply() {
     run_hook "post_apply"
 }
 
+function fetch_terraform_state() {
+    run_hook "pre_fetch_terraform_state"
+    if [[ $DRY_RUN == "True" ]]; then
+        echo "Using local terraform state for dry-run mode"
+        # Use local state for dry-run mode
+        local tf_state="${WORK}/terraform.tfstate"
+        $TERRAFORM_CMD state pull > "${tf_state}"
+        cat - > "${BACKEND_TF_FILE}" <<EOF
+terraform {
+  backend "local" {
+    path = "${tf_state}"
+  }
+}
+EOF
+        # changing the backend needs a re-init
+        $TERRAFORM_CMD init -reconfigure
+    fi
+    run_hook "post_fetch_terraform_state"
+}
+
 validate_generate_tf_config
 create_working_directory
 run_hook "pre_run"
@@ -161,6 +181,7 @@ run_hook "pre_run"
 # into the module directory
 generate-tf-config
 init
+fetch_terraform_state
 plan
 apply
 run_hook "post_run"

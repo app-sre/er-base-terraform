@@ -133,6 +133,7 @@ function plan() {
     if [[ $ACTION == "Destroy" ]]; then
         PLAN_EXTRA_OPTIONS="-destroy"
     fi
+    # shellcheck disable=SC2086
     $TERRAFORM_CMD plan ${PLAN_EXTRA_OPTIONS} -out="${PLAN_FILE}" ${TERRAFORM_VARS} ${LOCK}
     $TERRAFORM_CMD show -json "${PLAN_FILE}" > "${PLAN_FILE_JSON}"
     run_hook "post_plan"
@@ -145,6 +146,7 @@ function apply() {
         $TERRAFORM_CMD output -json > "$OUTPUTS_FILE"
         run_hook "post_output"
     elif [[ $ACTION == "Destroy" ]] && [[ $DRY_RUN == "False" ]]; then
+        # shellcheck disable=SC2086
         $TERRAFORM_CMD destroy -auto-approve ${TERRAFORM_VARS}
     fi
     run_hook "post_apply"

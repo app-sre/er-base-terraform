@@ -108,9 +108,9 @@ function run_hook() {
     set +e
     echo "Running hook: $HOOK_NAME"
     "$HOOK_SCRIPT" "$@"
+    local HOOK_STATUS=$?
     set -e
 
-    local HOOK_STATUS=$?
     if [[ $HOOK_STATUS -ne 0 ]]; then
         if [[ $HOOK_STATUS -eq 42 ]] && [[ $DRY_RUN == "True" ]]; then
             # hook requests retrigger of erv2 job. exit, but don't fail the job in dry-run mode

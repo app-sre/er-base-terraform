@@ -112,8 +112,8 @@ function run_hook() {
     set -e
 
     if [[ $HOOK_STATUS -ne 0 ]]; then
-        if [[ $HOOK_STATUS -eq 42 ]] && [[ $DRY_RUN == "True" ]]; then
-            # hook requests retrigger of erv2 job. exit, but don't fail the job in dry-run mode
+        if [[ $HOOK_STATUS -eq 42 ]]; then
+            # to early exit as success, skip all remaining steps
             exit 0
         fi
         exit $HOOK_STATUS

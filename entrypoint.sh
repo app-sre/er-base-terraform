@@ -74,8 +74,7 @@ function validate_generate_tf_config() {
 }
 
 function create_working_directory() {
-    mkdir -p "${TERRAFORM_MODULE_WORK_DIR}"
-    cp -rf "${TERRAFORM_MODULE_SRC_DIR}"/* "${TERRAFORM_MODULE_WORK_DIR}"/
+    cp -a "${TERRAFORM_MODULE_SRC_DIR}" "${TERRAFORM_MODULE_WORK_DIR}"
 }
 
 function run_hook() {

@@ -9,5 +9,6 @@ fi
 TF_INIT=$(mktemp -d)
 
 cp "${TERRAFORM_MODULE_SRC_DIR}"/versions.tf "${TF_INIT}"
+cp "${TERRAFORM_MODULE_SRC_DIR}"/.terraform.lock.hcl "${TF_INIT}"
 terraform -chdir="${TF_INIT}" init
 rm -rf "${TF_INIT}"

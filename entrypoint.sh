@@ -11,6 +11,7 @@ fi
 
 export DRY_RUN=${DRY_RUN:-"True"}
 export ACTION=${ACTION:-"Apply"}
+export LOCAL_STATE=${LOCAL_STATE:-"True"}
 
 if [[ $DRY_RUN != "True" ]] && [[ $DRY_RUN != "False" ]]; then
     echo "Invalid DRY_RUN option: $DRY_RUN. Must be 'True' or 'False'"
@@ -153,7 +154,7 @@ function apply() {
 
 function fetch_terraform_state() {
     run_hook "pre_fetch_terraform_state"
-    if [[ $DRY_RUN == "True" ]]; then
+    if [[ $DRY_RUN == "True" ]] && [[ $LOCAL_STATE == "True" ]]; then
         echo "Using local terraform state for dry-run mode"
         # Use local state for dry-run mode
         local tf_state="${WORK}/terraform.tfstate"

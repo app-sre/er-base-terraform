@@ -1,7 +1,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1760515502@sha256:34880b64c07f28f64d95737f82f891516de9a3b43583f39970f7bf8e4cfa48b7 AS prod
 
-LABEL konflux.additional-tags="0.3.8"
+LABEL konflux.additional-tags="0.4.0"
 
 USER 0
 

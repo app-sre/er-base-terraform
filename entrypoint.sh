@@ -121,6 +121,8 @@ function run_hook() {
 }
 
 function init() {
+    echo "BACKEND_TF_FILE content:"
+    echo -e "\033[1m$(cat "${BACKEND_TF_FILE}")\033[0m"
     run_hook "pre_init"
     $TERRAFORM_CMD init
     run_hook "post_init"

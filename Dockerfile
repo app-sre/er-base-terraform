@@ -10,7 +10,7 @@ ENV HOME="/home/app" \
     APP="/home/app/src"
 
 # Terraform versions and other related variables
-ENV TF_VERSION="1.7.5" \
+ENV TF_VERSION="1.13.4" \
     TF_PLUGIN_CACHE_DIR=${HOME}/.terraform.d/plugin-cache/ \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
 

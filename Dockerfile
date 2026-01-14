@@ -1,7 +1,7 @@
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7-1764794109@sha256:6fc28bcb6776e387d7a35a2056d9d2b985dc4e26031e98a2bd35a7137cd6fd71 AS prod
 
-LABEL konflux.additional-tags="0.4.0"
+LABEL konflux.additional-tags="0.5.0"
 
 USER 0
 
@@ -10,7 +10,7 @@ ENV HOME="/home/app" \
     APP="/home/app/src"
 
 # Terraform versions and other related variables
-ENV TF_VERSION="1.6.6" \
+ENV TF_VERSION="1.13.4" \
     TF_PLUGIN_CACHE_DIR=${HOME}/.terraform.d/plugin-cache/ \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
 

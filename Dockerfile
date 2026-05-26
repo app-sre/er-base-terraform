@@ -1,7 +1,7 @@
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1779809423@sha256:5b74fce9d6e629942a0c6dc0f546c193e70d7f974d999a48c948c53dd3d36362 AS prod
+FROM registry.access.redhat.com/ubi10/python-314-minimal:10.2-1779774002@sha256:36fb2f81e7364634ebf1f0aaef4625a28083fa756f66ae896c62b22150d9420a AS prod
 
-LABEL konflux.additional-tags="0.5.0"
+LABEL konflux.additional-tags="0.6.0"
 
 USER 0
 
@@ -15,12 +15,6 @@ ENV TF_VERSION="1.13.4" \
     TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=true
 
 COPY LICENSE /licenses/LICENSE
-
-# Install python
-RUN microdnf install -y python3.12 && \
-    update-alternatives --install /usr/bin/python3 python /usr/bin/python3.12 1 && \
-    microdnf clean all && \
-    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
 
 # Install dependencies
 RUN INSTALL_PKGS="make tar which unzip" && \

@@ -17,7 +17,7 @@ ENV TF_VERSION="1.13.4" \
 COPY LICENSE /licenses/LICENSE
 
 # Install dependencies
-RUN INSTALL_PKGS="make tar which unzip" && \
+RUN INSTALL_PKGS="make tar shadow-utils which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \
     rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*

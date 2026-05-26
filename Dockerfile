@@ -20,7 +20,7 @@ COPY LICENSE /licenses/LICENSE
 RUN INSTALL_PKGS="make tar shadow-utils which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \
-    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
+    rm -rf /var/cache/yum*
 
 # Install Terraform
 RUN curl -sfL https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip \

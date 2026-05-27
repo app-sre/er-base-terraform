@@ -1,13 +1,28 @@
 
-FROM registry.access.redhat.com/ubi10/python-314-minimal:10.2-1779774002@sha256:36fb2f81e7364634ebf1f0aaef4625a28083fa756f66ae896c62b22150d9420a AS prod
+FROM registry.access.redhat.com/ubi10/python-314-minimal@sha256:99907b91621ba42c4ebab666f1b75dbd9f44874fbed3a5f5da540302a2081094 AS prod
 
 LABEL konflux.additional-tags="0.6.0"
 
 USER 0
 
 # Standard path variables
-ENV HOME="/home/app" \
-    APP="/home/app/src"
+ENV APP_ROOT=/opt/app-root \
+    APP=/opt/app-root/src \
+    USER=1001
+
+# Python and UV related variables
+ENV \
+    # unbuffered output for easier logging
+    PYTHONUNBUFFERED=1 \
+    # use venv from ubi image
+    UV_PROJECT_ENVIRONMENT=${APP_ROOT} \
+    # compile bytecode for faster startup
+    UV_COMPILE_BYTECODE="true" \
+    # disable uv cache. it doesn't make sense in a container
+    UV_NO_CACHE=true \
+    BASH_ENV="${APP_ROOT}/bin/activate" \
+    ENV="${APP_ROOT}/bin/activate" \
+    PROMPT_COMMAND=". ${APP_ROOT}/bin/activate"
 
 # Terraform versions and other related variables
 ENV TF_VERSION="1.13.4" \
@@ -17,13 +32,14 @@ ENV TF_VERSION="1.13.4" \
 COPY LICENSE /licenses/LICENSE
 
 # Install dependencies
-RUN INSTALL_PKGS="make tar shadow-utils which unzip" && \
+RUN INSTALL_PKGS="make tar which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \
     rm -rf /var/cache/yum*
 
 # Install Terraform
-RUN curl -sfL https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip \
+ARG TARGETARCH
+RUN curl -sfL https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_${TARGETARCH}.zip \
     -o terraform.zip && \
     unzip terraform.zip && \
     mv terraform /usr/local/bin/terraform && \
@@ -36,12 +52,8 @@ RUN rm -rf /tmp && mkdir /tmp && chmod 1777 /tmp
 
 COPY terraform-provider-sync /usr/local/bin/terraform-provider-sync
 
-# User setup
-RUN useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
-    chown -R 1001:0 ${HOME}
-USER app
+USER ${USER}
 
-WORKDIR ${APP}
 COPY entrypoint.sh ./
 ENTRYPOINT [ "bash", "entrypoint.sh" ]
 

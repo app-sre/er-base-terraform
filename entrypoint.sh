@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -e
+DEBUG=${DEBUG:-"False"}
+
+if [[ ${DEBUG} == "True" ]]; then
+    set -x
+fi
 
 # Use /credentials as AWS credentials file if it exists
 test -f /credentials && export AWS_SHARED_CREDENTIALS_FILE="/credentials"
@@ -67,9 +72,9 @@ fi
 
 function validate_generate_tf_config() {
     local f_path
-    f_path=$(command -v generate-tf-config)
-    if [[ -z "$f_path" || ! -x "$f_path" ]]; then
-        echo "generate-tf-config must be an executable file and be findable in the system path"
+    f_path=$(command -v generate-tf-config) || { echo "generate-tf-config not found in system path"; exit 1; }
+    if [[ ! -x "${f_path}" ]]; then
+        echo "generate-tf-config must be an executable file"
         exit 1
     fi
 }

@@ -1,13 +1,28 @@
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.8-1779809423@sha256:5b74fce9d6e629942a0c6dc0f546c193e70d7f974d999a48c948c53dd3d36362 AS prod
+FROM registry.access.redhat.com/ubi10/python-314-minimal@sha256:0c5b5d198178280e65577e63251ee5ee49435e1a711bef4e4b5b471723e0ed3c AS prod
 
-LABEL konflux.additional-tags="0.5.0"
+LABEL konflux.additional-tags="0.6.0"
 
 USER 0
 
 # Standard path variables
-ENV HOME="/home/app" \
-    APP="/home/app/src"
+ENV APP_ROOT=/opt/app-root \
+    APP=/opt/app-root/src \
+    USER=1001
+
+# Python and UV related variables
+ENV \
+    # unbuffered output for easier logging
+    PYTHONUNBUFFERED=1 \
+    # use venv from ubi image
+    UV_PROJECT_ENVIRONMENT=${APP_ROOT} \
+    # compile bytecode for faster startup
+    UV_COMPILE_BYTECODE="true" \
+    # disable uv cache. it doesn't make sense in a container
+    UV_NO_CACHE=true \
+    BASH_ENV="${APP_ROOT}/bin/activate" \
+    ENV="${APP_ROOT}/bin/activate" \
+    PROMPT_COMMAND=". ${APP_ROOT}/bin/activate"
 
 # Terraform versions and other related variables
 ENV TF_VERSION="1.13.4" \
@@ -16,20 +31,15 @@ ENV TF_VERSION="1.13.4" \
 
 COPY LICENSE /licenses/LICENSE
 
-# Install python
-RUN microdnf install -y python3.12 && \
-    update-alternatives --install /usr/bin/python3 python /usr/bin/python3.12 1 && \
-    microdnf clean all && \
-    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
-
 # Install dependencies
 RUN INSTALL_PKGS="make tar which unzip" && \
     microdnf -y --nodocs --setopt=install_weak_deps=0 install $INSTALL_PKGS && \
     microdnf clean all && \
-    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
+    rm -rf /var/cache/yum*
 
 # Install Terraform
-RUN curl -sfL https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip \
+ARG TARGETARCH
+RUN curl -sfL https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_${TARGETARCH}.zip \
     -o terraform.zip && \
     unzip terraform.zip && \
     mv terraform /usr/local/bin/terraform && \
@@ -42,12 +52,8 @@ RUN rm -rf /tmp && mkdir /tmp && chmod 1777 /tmp
 
 COPY terraform-provider-sync /usr/local/bin/terraform-provider-sync
 
-# User setup
-RUN useradd -u 1001 -g 0 -d ${HOME} -M -s /sbin/nologin -c "Default Application User" app && \
-    chown -R 1001:0 ${HOME}
-USER app
+USER ${USER}
 
-WORKDIR ${APP}
 COPY entrypoint.sh ./
 ENTRYPOINT [ "bash", "entrypoint.sh" ]
 

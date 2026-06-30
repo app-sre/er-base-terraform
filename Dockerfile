@@ -1,5 +1,5 @@
 
-FROM registry.access.redhat.com/ubi10/python-314-minimal@sha256:c089357da10fef8abd0ba8893b6b90a7bf9ab66253e310b76a750d9f856124cb AS prod
+FROM registry.access.redhat.com/ubi10/python-314-minimal@sha256:92f2b9ef3d2fe255f5a2200f97bf4f14a95dc120bd19bcbc9f84a2f10e4af683 AS prod
 
 LABEL konflux.additional-tags="0.6.0"
 
